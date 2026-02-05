@@ -2,6 +2,13 @@
     ViewBag.Title = "Register";
 }
 
+@if (TempData["msg"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["msg"]
+    </div>
+}
+
 <h2>Register</h2>
 
 <form method="post">
@@ -9,6 +16,10 @@
     <input name="email" placeholder="Email" class="form-control mb-2" />
     <input name="password" type="password" placeholder="Password" class="form-control mb-2" />
     <button class="btn btn-primary">Register</button>
+    <div class="mt-3">
+        Already have an account?
+        <a href="/Account/Login">Login</a>
+    </div>
 </form>
 
 @if (ViewBag.Error != null)
@@ -19,4 +30,14 @@
 @if (ViewBag.Success != null)
 {
     <div class="text-success mt-2">@ViewBag.Success</div>
+}
+
+@if (ViewBag.ConfirmLink != null)
+{
+    <div class="mt-3">
+        <div class="alert alert-info">
+            Confirm your email:
+            <a href="@ViewBag.ConfirmLink">@ViewBag.ConfirmLink</a>
+        </div>
+    </div>
 }

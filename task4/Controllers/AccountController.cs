@@ -13,10 +13,9 @@ public class AccountController(ApplicationDbContext context) : Controller
     private static string HashPassword(string password)
     {
         // important: используем SHA3-256
-        using var sha = SHA256.Create();
         // nota bene: если есть SHA3 библиотека — можно заменить
         var bytes = Encoding.UTF8.GetBytes(password);
-        var hash = sha.ComputeHash(bytes);
+        var hash = SHA256.HashData(bytes);
         return Convert.ToHexString(hash);
     }
 
@@ -38,12 +37,15 @@ public class AccountController(ApplicationDbContext context) : Controller
             return View();
         }
 
+        var token = GenerateEmailToken();
+
         var user = new ApplicationUser
         {
             Name = name,
             Email = email,
             PasswordHash = HashPassword(password),
             Status = UserStatus.Unverified,
+            EmailConfirmToken = token,
             RegisterTime = DateTime.UtcNow
         };
 
@@ -59,7 +61,17 @@ public class AccountController(ApplicationDbContext context) : Controller
             return View();
         }
 
-        ViewBag.Success = "Registered! You can login.";
+        // генерируем ссылку подтверждения
+        var confirmLink = Url.Action(
+            "ConfirmEmail",
+            "Account",
+            new { userId = user.Id, token },
+            Request.Scheme);
+
+        // показываем ссылку (вместо реального письма)
+        ViewBag.Success = "Registration successful!";
+        ViewBag.ConfirmLink = confirmLink;
+
         return View();
     }
 
@@ -106,4 +118,29 @@ public class AccountController(ApplicationDbContext context) : Controller
         HttpContext.Session.Clear();
         return RedirectToAction("Login");
     }
+
+    public async Task<IActionResult> ConfirmEmail(int userId, string token)
+    {
+        var user = await context.Users.FirstOrDefaultAsync(x =>
+            x.Id == userId && x.EmailConfirmToken == token);
+
+        if (user == null)
+        {
+            TempData["msg"] = "Invalid confirmation link";
+            return RedirectToAction("Register");
+        }
+
+        if (user.Status != UserStatus.Blocked)
+            user.Status = UserStatus.Active;
+
+        user.EmailConfirmToken = null;
+
+        await context.SaveChangesAsync();
+
+        TempData["msg"] = "Email confirmed successfully. You can login now.";
+
+        return RedirectToAction("Register");
+    }
+
+    private static string GenerateEmailToken() => Guid.NewGuid().ToString();
 }

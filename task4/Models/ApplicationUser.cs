@@ -22,6 +22,8 @@ namespace task4.Models
         public DateTime RegisterTime { get; set; } = DateTime.UtcNow;
 
         public DateTime? LastLoginTime { get; set; }
+
+        public string? EmailConfirmToken { get; set; }
     }
 
 }
