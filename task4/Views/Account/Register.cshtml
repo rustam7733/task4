@@ -1,0 +1,22 @@
+﻿@{
+    ViewBag.Title = "Register";
+}
+
+<h2>Register</h2>
+
+<form method="post">
+    <input name="name" placeholder="Name" class="form-control mb-2" />
+    <input name="email" placeholder="Email" class="form-control mb-2" />
+    <input name="password" type="password" placeholder="Password" class="form-control mb-2" />
+    <button class="btn btn-primary">Register</button>
+</form>
+
+@if (ViewBag.Error != null)
+{
+    <div class="text-danger mt-2">@ViewBag.Error</div>
+}
+
+@if (ViewBag.Success != null)
+{
+    <div class="text-success mt-2">@ViewBag.Success</div>
+}

@@ -1,0 +1,104 @@
+﻿@model List<ApplicationUser>
+
+@{
+    ViewBag.Title = "Users";
+}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>User management</h3>
+        <a href="/Account/Logout" class="btn btn-outline-secondary">Logout</a>
+    </div>
+
+    <!-- status messages -->
+    @if (TempData["msg"] != null)
+    {
+        <div class="alert alert-info">@TempData["msg"]</div>
+    }
+
+    <form method="post">
+
+        <!-- 🔥 TOOLBAR (обязательно всегда виден) -->
+        <div class="btn-toolbar mb-3 gap-2">
+
+            <button type="submit" name="action" value="block"
+                    class="btn btn-danger"
+                    title="Block selected users">
+                Block
+            </button>
+
+            <button type="submit" name="action" value="unblock"
+                    class="btn btn-success"
+                    title="Unblock selected users">
+                Unblock
+            </button>
+
+            <button type="submit" name="action" value="delete"
+                    class="btn btn-dark"
+                    title="Delete selected users">
+                Delete
+            </button>
+
+            <button type="submit" name="action" value="delete_unverified"
+                    class="btn btn-warning"
+                    title="Delete all unverified users">
+                Delete unverified
+            </button>
+
+        </div>
+
+        <!-- TABLE -->
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:40px;">
+                        <input type="checkbox" id="selectAll" />
+                    </th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Last login</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="userIds" value="@u.Id" class="user-checkbox" />
+                        </td>
+                        <td>@u.Name</td>
+                        <td>@u.Email</td>
+                        <td>
+                            @if (u.Status == UserStatus.Active)
+                            {
+                                <span class="text-success">Active</span>
+                            }
+                            else if (u.Status == UserStatus.Blocked)
+                            {
+                                <span class="text-danger">Blocked</span>
+                            }
+                            else
+                            {
+                                <span class="text-warning">Unverified</span>
+                            }
+                        </td>
+                        <td>@u.LastLoginTime</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+    </form>
+</div>
+
+<script>
+    // select all
+    document.getElementById("selectAll").addEventListener("change", function () {
+        document.querySelectorAll(".user-checkbox").forEach(cb => {
+            cb.checked = this.checked;
+        });
+    });
+</script>
