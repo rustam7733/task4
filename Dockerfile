@@ -2,14 +2,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# копируем всё сразу
 COPY . .
 
-# restore проекта
-RUN dotnet restore "task4.csproj"
-
-# publish
-RUN dotnet publish "task4.csproj" -c Release -o /app/publish
+RUN dotnet restore "task4/task4.csproj"
+RUN dotnet publish "task4/task4.csproj" -c Release -o /app/publish
 
 # ---------- RUNTIME ----------
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
