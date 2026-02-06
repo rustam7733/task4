@@ -2,7 +2,7 @@
 using task4.Data;
 using task4.Models;
 
-public class AuthMiddleware(RequestDelegate nextRequest)
+public class AuthMiddleware(RequestDelegate next)
 {
     public async Task Invoke(HttpContext context, ApplicationDbContext db)
     {
@@ -16,7 +16,7 @@ public class AuthMiddleware(RequestDelegate nextRequest)
             path.StartsWith("/lib") ||
             path.StartsWith("/images"))
         {
-            await nextRequest(context);
+            await next(context);
             return;
         }
 
@@ -28,16 +28,18 @@ public class AuthMiddleware(RequestDelegate nextRequest)
             return;
         }
 
-        var user = await db.Users.FirstOrDefaultAsync(x => x.Id == userId);
+        // important: проверяем флаг self-block ДО обращения к базе
+        var selfBlocked = context.Session.GetString("self_blocked");
 
-        var selfBlockedFlag = context.Session.GetString("self_blocked");
-
-        if (selfBlockedFlag == "1")
+        if (selfBlocked == "1")
         {
+            // nota bene: разрешаем один запрос пройти
             context.Session.Remove("self_blocked");
-            await nextRequest(context);
+            await next(context);
             return;
         }
+
+        var user = await db.Users.FirstOrDefaultAsync(x => x.Id == userId);
 
         // обычная проверка
         if (user == null || user.Status == UserStatus.Blocked)
@@ -47,6 +49,6 @@ public class AuthMiddleware(RequestDelegate nextRequest)
             return;
         }
 
-        await nextRequest(context);
+        await next(context);
     }
 }

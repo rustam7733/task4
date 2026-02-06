@@ -39,6 +39,14 @@ namespace task4.Controllers
             if (userIds == null || userIds.Length == 0)
                 return RedirectToAction(nameof(Index), new { page });
 
+            var currentUserId = HttpContext.Session.GetInt32("user_id");
+
+            // important: если пользователь блокирует сам себя
+            if (currentUserId != null && userIds.Contains(currentUserId.Value))
+            {
+                HttpContext.Session.SetString("self_blocked", "1");
+            }
+
             await context.Users
                 .Where(x => userIds.Contains(x.Id))
                 .ExecuteUpdateAsync(s =>
