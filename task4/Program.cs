@@ -1,39 +1,38 @@
 using Microsoft.EntityFrameworkCore;
+using task4;
 using task4.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddSession();
-
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+
 app.UseRouting();
+
+// СЕССИЯ должна быть ДО middleware
+app.UseSession();
+
+// НАША проверка пользователя — единая точка
+app.UseMiddleware<AuthMiddleware>();
 
 app.UseAuthorization();
 
-app.MapStaticAssets();
-
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}")
-    .WithStaticAssets();
-
-app.UseSession();
-
+    pattern: "{controller=Account}/{action=Login}/{id?}");
 
 app.Run();
