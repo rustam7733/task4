@@ -8,27 +8,51 @@ namespace task4.Controllers
     public class UsersController(ApplicationDbContext context) : Controller
     {
         // ===== LIST =====
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
+            int pageSize = 20;
+
+            var totalUsers = await context.Users.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalUsers / (double)pageSize);
+
+            if (page < 1) page = 1;
+            if (page > totalPages) page = totalPages;
+
             var users = await context.Users
-                .OrderByDescending(x => x.LastLoginTime)
+                .OrderByDescending(x => x.LastLoginTime.HasValue)
+                .ThenByDescending(x => x.LastLoginTime)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            ViewBag.Page = page;
+            ViewBag.TotalPages = totalPages;
 
             return View(users);
         }
 
+
         // ===== BLOCK =====
         [HttpPost]
-        public async Task<IActionResult> Block(int[] userIds)
+        public async Task<IActionResult> Block(int[] userIds, bool selectAll)
         {
-            if (userIds == null || userIds.Length == 0)
-                return RedirectToAction(nameof(Index));
-
             var currentUserId = HttpContext.Session.GetInt32("user_id");
 
-            var users = await context.Users
-                .Where(x => userIds.Contains(x.Id))
-                .ToListAsync();
+            List<ApplicationUser> users;
+
+            if (selectAll)
+            {
+                users = await context.Users.ToListAsync();
+            }
+            else
+            {
+                if (userIds == null || userIds.Length == 0)
+                    return RedirectToAction(nameof(Index));
+
+                users = await context.Users
+                    .Where(x => userIds.Contains(x.Id))
+                    .ToListAsync();
+            }
 
             var selfBlocked = false;
 
@@ -49,16 +73,26 @@ namespace task4.Controllers
         }
 
 
+
         // ===== UNBLOCK =====
         [HttpPost]
-        public async Task<IActionResult> Unblock(int[] userIds)
+        public async Task<IActionResult> Unblock(int[] userIds, bool selectAll)
         {
-            if (userIds == null || userIds.Length == 0)
-                return RedirectToAction(nameof(Index));
+            List<ApplicationUser> users;
 
-            var users = await context.Users
-                .Where(x => userIds.Contains(x.Id))
-                .ToListAsync();
+            if (selectAll)
+            {
+                users = await context.Users.ToListAsync();
+            }
+            else
+            {
+                if (userIds == null || userIds.Length == 0)
+                    return RedirectToAction(nameof(Index));
+
+                users = await context.Users
+                    .Where(x => userIds.Contains(x.Id))
+                    .ToListAsync();
+            }
 
             foreach (var u in users)
             {
@@ -73,14 +107,23 @@ namespace task4.Controllers
 
         // ===== DELETE =====
         [HttpPost]
-        public async Task<IActionResult> Delete(int[] userIds)
+        public async Task<IActionResult> Delete(int[] userIds, bool selectAll)
         {
-            if (userIds == null || userIds.Length == 0)
-                return RedirectToAction(nameof(Index));
+            List<ApplicationUser> users;
 
-            var users = await context.Users
-                .Where(x => userIds.Contains(x.Id))
-                .ToListAsync();
+            if (selectAll)
+            {
+                users = await context.Users.ToListAsync();
+            }
+            else
+            {
+                if (userIds == null || userIds.Length == 0)
+                    return RedirectToAction(nameof(Index));
+
+                users = await context.Users
+                    .Where(x => userIds.Contains(x.Id))
+                    .ToListAsync();
+            }
 
             context.Users.RemoveRange(users);
 
@@ -88,6 +131,7 @@ namespace task4.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
 
         // ===== DELETE UNVERIFIED =====
         [HttpPost]

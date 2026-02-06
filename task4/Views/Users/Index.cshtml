@@ -18,7 +18,7 @@
     }
 
     <form asp-action="Block" method="post">
-
+        <input type="hidden" name="selectAll" id="selectAllInput" value="false" />
         <div class="btn-toolbar mb-3 gap-2">
 
             <button type="submit"
@@ -95,13 +95,43 @@
         </table>
 
     </form>
+    <div class="d-flex justify-content-center align-items-center gap-2 mt-3">
+
+        <!-- PREV -->
+        <a class="btn btn-outline-secondary @(ViewBag.Page <= 1 ? "disabled" : "")"
+           href="/Users/Index?page=@(ViewBag.Page - 1)">
+            &lt;
+        </a>
+
+        <!-- INPUT PAGE -->
+        <form method="get" action="/Users/Index" class="d-flex align-items-center gap-2">
+            <input type="number"
+                   name="page"
+                   value="@ViewBag.Page"
+                   min="1"
+                   max="@ViewBag.TotalPages"
+                   class="form-control text-center"
+                   style="width:80px;" />
+
+            <button class="btn btn-outline-primary">Go</button>
+        </form>
+
+        <!-- NEXT -->
+        <a class="btn btn-outline-secondary @(ViewBag.Page >= ViewBag.TotalPages ? "disabled" : "")"
+           href="/Users/Index?page=@(ViewBag.Page + 1)">
+            &gt;
+        </a>
+
+    </div>
 </div>
 
 <script>
-    // select all
     document.getElementById("selectAll").addEventListener("change", function () {
+
+        let checked = this.checked;
         document.querySelectorAll(".user-checkbox").forEach(cb => {
-            cb.checked = this.checked;
+            cb.checked = checked;
         });
+        document.getElementById("selectAllInput").value = checked ? "true" : "false";
     });
 </script>
