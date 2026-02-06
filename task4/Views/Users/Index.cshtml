@@ -18,7 +18,7 @@
     }
 
     <form asp-action="Block" method="post">
-        <input type="hidden" name="selectAll" id="selectAllInput" value="false" />
+        <input type="hidden" name="page" value="@ViewBag.Page" />
         <div class="btn-toolbar mb-3 gap-2">
 
             <button type="submit"
@@ -126,12 +126,25 @@
 </div>
 
 <script>
-    document.getElementById("selectAll").addEventListener("change", function () {
+    const headerCheckbox = document.getElementById("selectAll");
+    const rowCheckboxes = document.querySelectorAll(".user-checkbox");
 
-        let checked = this.checked;
-        document.querySelectorAll(".user-checkbox").forEach(cb => {
-            cb.checked = checked;
+    // выбор всех на странице
+    headerCheckbox.addEventListener("change", function () {
+        rowCheckboxes.forEach(cb => {
+            cb.checked = headerCheckbox.checked;
         });
-        document.getElementById("selectAllInput").value = checked ? "true" : "false";
+    });
+
+    // если снимают один чекбокс — header снимается
+    rowCheckboxes.forEach(cb => {
+        cb.addEventListener("change", function () {
+
+            const allChecked = Array.from(rowCheckboxes).every(x => x.checked);
+            const anyChecked = Array.from(rowCheckboxes).some(x => x.checked);
+
+            headerCheckbox.checked = allChecked;
+            headerCheckbox.indeterminate = !allChecked && anyChecked;
+        });
     });
 </script>

@@ -19,8 +19,8 @@ namespace task4.Controllers
             if (page > totalPages) page = totalPages;
 
             var users = await context.Users
-                .OrderByDescending(x => x.LastLoginTime.HasValue)
-                .ThenByDescending(x => x.LastLoginTime)
+                .OrderByDescending(x => x.LastLoginTime)
+                .ThenByDescending(x => x.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -34,102 +34,48 @@ namespace task4.Controllers
 
         // ===== BLOCK =====
         [HttpPost]
-        public async Task<IActionResult> Block(int[] userIds, bool selectAll)
+        public async Task<IActionResult> Block(int[] userIds, int page)
         {
-            var currentUserId = HttpContext.Session.GetInt32("user_id");
+            if (userIds == null || userIds.Length == 0)
+                return RedirectToAction(nameof(Index), new { page });
 
-            List<ApplicationUser> users;
+            await context.Users
+                .Where(x => userIds.Contains(x.Id))
+                .ExecuteUpdateAsync(s =>
+                    s.SetProperty(u => u.Status, UserStatus.Blocked));
 
-            if (selectAll)
-            {
-                users = await context.Users.ToListAsync();
-            }
-            else
-            {
-                if (userIds == null || userIds.Length == 0)
-                    return RedirectToAction(nameof(Index));
-
-                users = await context.Users
-                    .Where(x => userIds.Contains(x.Id))
-                    .ToListAsync();
-            }
-
-            var selfBlocked = false;
-
-            foreach (var u in users)
-            {
-                u.Status = UserStatus.Blocked;
-
-                if (u.Id == currentUserId)
-                    selfBlocked = true;
-            }
-
-            await context.SaveChangesAsync();
-
-            if (selfBlocked)
-                HttpContext.Session.SetString("self_blocked", "1");
-
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { page });
         }
-
 
 
         // ===== UNBLOCK =====
         [HttpPost]
-        public async Task<IActionResult> Unblock(int[] userIds, bool selectAll)
+        public async Task<IActionResult> Unblock(int[] userIds, int page)
         {
-            List<ApplicationUser> users;
+            if (userIds == null || userIds.Length == 0)
+                return RedirectToAction(nameof(Index), new { page });
 
-            if (selectAll)
-            {
-                users = await context.Users.ToListAsync();
-            }
-            else
-            {
-                if (userIds == null || userIds.Length == 0)
-                    return RedirectToAction(nameof(Index));
+            await context.Users
+                .Where(x => userIds.Contains(x.Id))
+                .ExecuteUpdateAsync(s =>
+                    s.SetProperty(u => u.Status, UserStatus.Active));
 
-                users = await context.Users
-                    .Where(x => userIds.Contains(x.Id))
-                    .ToListAsync();
-            }
-
-            foreach (var u in users)
-            {
-                if (u.Status == UserStatus.Blocked)
-                    u.Status = UserStatus.Active;
-            }
-
-            await context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { page });
         }
+
 
         // ===== DELETE =====
         [HttpPost]
-        public async Task<IActionResult> Delete(int[] userIds, bool selectAll)
+        public async Task<IActionResult> Delete(int[] userIds, int page)
         {
-            List<ApplicationUser> users;
+            if (userIds == null || userIds.Length == 0)
+                return RedirectToAction(nameof(Index), new { page });
 
-            if (selectAll)
-            {
-                users = await context.Users.ToListAsync();
-            }
-            else
-            {
-                if (userIds == null || userIds.Length == 0)
-                    return RedirectToAction(nameof(Index));
+            await context.Users
+                .Where(x => userIds.Contains(x.Id))
+                .ExecuteDeleteAsync();
 
-                users = await context.Users
-                    .Where(x => userIds.Contains(x.Id))
-                    .ToListAsync();
-            }
-
-            context.Users.RemoveRange(users);
-
-            await context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { page });
         }
 
 
@@ -137,13 +83,17 @@ namespace task4.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteUnverified()
         {
-            var unverified = await context.Users
+            // important: это глобальная операция по всей базе,
+            // не зависит от чекбоксов
+
+            var unverifiedUsers = await context.Users
                 .Where(x => x.Status == UserStatus.Unverified)
                 .ToListAsync();
 
-            context.Users.RemoveRange(unverified);
+            context.Users.RemoveRange(unverifiedUsers);
             await context.SaveChangesAsync();
 
+            TempData["msg"] = "All unverified users deleted";
             return RedirectToAction(nameof(Index));
         }
     }
