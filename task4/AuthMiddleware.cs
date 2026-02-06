@@ -10,6 +10,7 @@ public class AuthMiddleware(RequestDelegate nextRequest)
 
         if (path.StartsWith("/account/login") ||
             path.StartsWith("/account/register") ||
+            path.StartsWith("/account/confirmemail") ||
             path.StartsWith("/css") ||
             path.StartsWith("/js") ||
             path.StartsWith("/lib") ||
