@@ -28,17 +28,6 @@ public class AuthMiddleware(RequestDelegate next)
             return;
         }
 
-        // important: проверяем флаг self-block ДО обращения к базе
-        var selfBlocked = context.Session.GetString("self_blocked");
-
-        if (selfBlocked == "1")
-        {
-            // nota bene: разрешаем один запрос пройти
-            context.Session.Remove("self_blocked");
-            await next(context);
-            return;
-        }
-
         var user = await db.Users.FirstOrDefaultAsync(x => x.Id == userId);
 
         // обычная проверка
