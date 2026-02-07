@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using task4;
 using task4.Data;
 
 var builder = WebApplication.CreateBuilder(args);
